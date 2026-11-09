@@ -4,12 +4,11 @@
   "private": true,
   "description": "Trigger.dev v4 task examples for TTDU (run document flows on the office PC runner or the TTDU hub).",
   "license": "MIT",
-  "peerDependencies": {
-    "@trigger.dev/sdk": ">=4.0.0"
-  },
   "files": [
     "src",
     "trigger",
+    "trigger.config.ts",
+    "tsconfig.json",
     "README.md",
     "LICENSE"
   ],
@@ -22,5 +21,19 @@
     "url": "https://github.com/etacbae6768-a11y/ttdu-integrations/issues"
   },
   "homepage": "https://github.com/etacbae6768-a11y/ttdu-integrations/tree/main/trigger-dev-ttdu#readme",
-  "author": "Park Jihoon (Tools That Don't Upload) <hello@toolsthatdontupload.com>"
+  "author": "Park Jihoon (Tools That Don't Upload) <hello@toolsthatdontupload.com>",
+  "type": "module",
+  "scripts": {
+    "dev": "trigger dev",
+    "deploy": "trigger deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "^4.8.3"
+  },
+  "devDependencies": {
+    "trigger.dev": "^4.8.3",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
 }
