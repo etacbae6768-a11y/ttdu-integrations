@@ -1,0 +1,30 @@
+{
+  "name": "@ttdu/piece-ttdu",
+  "version": "0.1.2",
+  "description": "TTDU (Tools That Don't Upload) piece for Activepieces: run saved TTDU flows, single tools and HWP conversion on the office PC runner (127.0.0.1, files stay on the PC) or the TTDU hub API.",
+  "license": "MIT",
+  "author": "Park Jihoon (Tools That Don't Upload) <hello@toolsthatdontupload.com>",
+  "main": "./src/index.js",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "@activepieces/pieces-common": "^0.12.5",
+    "@activepieces/pieces-framework": "^0.32.0",
+    "@activepieces/shared": "^0.96.2",
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/etacbae6768-a11y/ttdu-integrations.git",
+    "directory": "activepieces-piece-ttdu"
+  },
+  "bugs": {
+    "url": "https://github.com/etacbae6768-a11y/ttdu-integrations/issues"
+  },
+  "homepage": "https://github.com/etacbae6768-a11y/ttdu-integrations/tree/main/activepieces-piece-ttdu#readme"
+}

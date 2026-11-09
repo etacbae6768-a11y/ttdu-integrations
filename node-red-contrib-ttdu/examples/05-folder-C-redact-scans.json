@@ -1,0 +1,139 @@
+[
+  {
+    "id": "tab00000021",
+    "type": "tab",
+    "label": "TTDU 05-folder-C-redact-scans"
+  },
+  {
+    "id": "ttducfg00001",
+    "type": "ttdu-config",
+    "name": "TTDU this PC",
+    "target": "local",
+    "baseUrl": "http://127.0.0.1:8790"
+  },
+  {
+    "id": "w00000022",
+    "z": "tab00000021",
+    "type": "watch",
+    "name": "watch C:/TTDU/in-redact",
+    "files": "C:/TTDU/in-redact",
+    "recursive": false,
+    "x": 160,
+    "y": 80,
+    "wires": [
+      [
+        "q00000023"
+      ]
+    ]
+  },
+  {
+    "id": "q00000023",
+    "z": "tab00000021",
+    "type": "switch",
+    "name": "new file \\.(pdf|png|jpe?g)$",
+    "property": "filename",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "regex",
+        "v": "\\.(pdf|png|jpe?g)$",
+        "vt": "str",
+        "case": true
+      }
+    ],
+    "checkall": "true",
+    "outputs": 1,
+    "x": 360,
+    "y": 80,
+    "wires": [
+      [
+        "f00000024"
+      ]
+    ]
+  },
+  {
+    "id": "f00000024",
+    "z": "tab00000021",
+    "type": "file in",
+    "name": "read file",
+    "filename": "filename",
+    "filenameType": "msg",
+    "format": "",
+    "allProps": false,
+    "x": 540,
+    "y": 80,
+    "wires": [
+      [
+        "t00000025"
+      ]
+    ]
+  },
+  {
+    "id": "t00000025",
+    "z": "tab00000021",
+    "type": "ttdu-run",
+    "name": "C 개인정보 가리기",
+    "server": "ttducfg00001",
+    "flow": "C",
+    "flowJson": "",
+    "vars": "",
+    "x": 720,
+    "y": 80,
+    "wires": [
+      [
+        "p00000026"
+      ]
+    ]
+  },
+  {
+    "id": "p00000026",
+    "z": "tab00000021",
+    "type": "split",
+    "name": "one msg per result",
+    "splt": "\\n",
+    "spltType": "str",
+    "arraySplt": 1,
+    "arraySpltType": "len",
+    "stream": false,
+    "addname": "",
+    "x": 900,
+    "y": 80,
+    "wires": [
+      [
+        "m00000027"
+      ]
+    ]
+  },
+  {
+    "id": "m00000027",
+    "z": "tab00000021",
+    "type": "function",
+    "name": "name in C:/TTDU/out-redact",
+    "func": "// one result from one input: keep the input's base name (h-001.hwpx -> h-001.pdf)\nconst base = String(msg.inputFilename || '').split(/[\\\\/]/).pop().replace(/\\.[^.]+$/, '');\nconst ext = (msg.payload.name.match(/\\.[^.]+$/) || [''])[0];\nconst name = msg.ttdu.count === 1 && base ? base + ext : msg.payload.name;\nmsg.filename = \"C:/TTDU/out-redact\" + '/' + name;\nmsg.payload = msg.payload.data;\nreturn msg;",
+    "outputs": 1,
+    "x": 1080,
+    "y": 80,
+    "wires": [
+      [
+        "o00000028"
+      ]
+    ]
+  },
+  {
+    "id": "o00000028",
+    "z": "tab00000021",
+    "type": "file",
+    "name": "write result",
+    "filename": "filename",
+    "filenameType": "msg",
+    "appendNewline": false,
+    "createDir": true,
+    "overwriteFile": "true",
+    "encoding": "none",
+    "x": 1260,
+    "y": 80,
+    "wires": [
+      []
+    ]
+  }
+]

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.tgz
+*.whl
+*.tar.gz
+__pycache__/
+*.egg-info/
+build/
+.venv/
+test/*.local.json
+test/run.bundle.cjs
+samples/
+*.tmp.*
+.env
+

@@ -1,0 +1,35 @@
+name: ci
+# Offline checks only (no runner, no network calls to TTDU).
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node-RED nodes load
+        run: node -e "for (const f of ['node-red-contrib-ttdu/nodes/ttdu-config.js','node-red-contrib-ttdu/nodes/ttdu-run.js']) require('./' + f); require('./common/ttdu-client.cjs')"
+      - name: n8n node build + package check
+        working-directory: n8n-nodes-ttdu
+        run: |
+          npm install --no-audit --no-fund --ignore-scripts
+          npm run build
+          node -e "const {Ttdu}=require('./dist/nodes/Ttdu/Ttdu.node.js');const {TtduApi}=require('./dist/credentials/TtduApi.credentials.js');console.log(new Ttdu().description.name,new TtduApi().name)"
+          npm pack --dry-run
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install build twine
+      - run: python -m build airflow-provider-ttdu --outdir dist && python -m twine check dist/*
+      - run: python -c "import sys; sys.path.insert(0,'kestra-ttdu/namespace-files'); import ttdu_client as t; print(sorted(t.PRESETS))"

@@ -1,0 +1,33 @@
+name: publish-npm
+# npm Trusted Publishing (GitHub Actions OIDC, no stored token) with provenance.
+# Each package must have this repository + workflow file (publish-npm.yml, environment npm) registered as its
+# trusted publisher on npmjs.com. n8n requires provenance for verified community nodes (since 2026-05-01).
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Folder to publish'
+        required: true
+        type: choice
+        options: [node-red-contrib-ttdu, n8n-nodes-ttdu]
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install -g npm@latest
+      - name: Build (n8n-nodes-ttdu only)
+        if: inputs.package == 'n8n-nodes-ttdu'
+        working-directory: n8n-nodes-ttdu
+        run: npm install --no-audit --no-fund --ignore-scripts && npm run build
+      - name: Publish
+        working-directory: ${{ inputs.package }}
+        run: npm publish --provenance --access public

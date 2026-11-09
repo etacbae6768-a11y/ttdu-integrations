@@ -1,0 +1,120 @@
+[
+  {
+    "id": "tab00000001",
+    "type": "tab",
+    "label": "TTDU 01-http-A-receipts-to-pdf"
+  },
+  {
+    "id": "ttducfg00001",
+    "type": "ttdu-config",
+    "name": "TTDU this PC",
+    "target": "local",
+    "baseUrl": "http://127.0.0.1:8790"
+  },
+  {
+    "id": "c00000007",
+    "z": "tab00000001",
+    "type": "catch",
+    "name": "TTDU error",
+    "scope": [
+      "t00000004"
+    ],
+    "uncaught": false,
+    "x": 640,
+    "y": 120,
+    "wires": [
+      [
+        "e00000008"
+      ]
+    ]
+  },
+  {
+    "id": "e00000008",
+    "z": "tab00000001",
+    "type": "function",
+    "name": "error -> 500",
+    "func": "msg.statusCode = 500;\nmsg.payload = { ok: false, error: msg.error && msg.error.message };\nreturn msg;",
+    "outputs": 1,
+    "x": 840,
+    "y": 120,
+    "wires": [
+      [
+        "r00000006"
+      ]
+    ]
+  },
+  {
+    "id": "h00000002",
+    "z": "tab00000001",
+    "type": "http in",
+    "name": "POST /ttdu/a (multipart files, client, date)",
+    "url": "/ttdu/a",
+    "method": "post",
+    "upload": true,
+    "x": 220,
+    "y": 80,
+    "wires": [
+      [
+        "v00000003"
+      ]
+    ]
+  },
+  {
+    "id": "v00000003",
+    "z": "tab00000001",
+    "type": "function",
+    "name": "vars from form",
+    "func": "const b = msg.req.body || {};\nmsg.vars = {};\nif (b.client) msg.vars.client = b.client;\nif (b.date) msg.vars.date = b.date;\nreturn msg;",
+    "outputs": 1,
+    "x": 460,
+    "y": 80,
+    "wires": [
+      [
+        "t00000004"
+      ]
+    ]
+  },
+  {
+    "id": "t00000004",
+    "z": "tab00000001",
+    "type": "ttdu-run",
+    "name": "A 증빙사진→PDF",
+    "server": "ttducfg00001",
+    "flow": "A",
+    "flowJson": "",
+    "vars": "",
+    "x": 640,
+    "y": 80,
+    "wires": [
+      [
+        "s00000005"
+      ]
+    ]
+  },
+  {
+    "id": "s00000005",
+    "z": "tab00000001",
+    "type": "function",
+    "name": "summary + files (base64)",
+    "func": "msg.payload = { ok: msg.ttdu.ok, count: msg.ttdu.count, notes: msg.ttdu.notes, files: msg.payload.map(o => ({ name: o.name, mime: o.mime, size: o.size, sha256: o.sha256, base64: o.data.toString('base64') })) };\nreturn msg;",
+    "outputs": 1,
+    "x": 840,
+    "y": 80,
+    "wires": [
+      [
+        "r00000006"
+      ]
+    ]
+  },
+  {
+    "id": "r00000006",
+    "z": "tab00000001",
+    "type": "http response",
+    "name": "",
+    "statusCode": "",
+    "headers": {},
+    "x": 1020,
+    "y": 80,
+    "wires": []
+  }
+]

@@ -1,0 +1,139 @@
+[
+  {
+    "id": "tab00000029",
+    "type": "tab",
+    "label": "TTDU 06-folder-HWP-to-pdf"
+  },
+  {
+    "id": "ttducfg00001",
+    "type": "ttdu-config",
+    "name": "TTDU this PC",
+    "target": "local",
+    "baseUrl": "http://127.0.0.1:8790"
+  },
+  {
+    "id": "w0000002a",
+    "z": "tab00000029",
+    "type": "watch",
+    "name": "watch C:/TTDU/in-hwp",
+    "files": "C:/TTDU/in-hwp",
+    "recursive": false,
+    "x": 160,
+    "y": 80,
+    "wires": [
+      [
+        "q0000002b"
+      ]
+    ]
+  },
+  {
+    "id": "q0000002b",
+    "z": "tab00000029",
+    "type": "switch",
+    "name": "new file \\.hwpx?$",
+    "property": "filename",
+    "propertyType": "msg",
+    "rules": [
+      {
+        "t": "regex",
+        "v": "\\.hwpx?$",
+        "vt": "str",
+        "case": true
+      }
+    ],
+    "checkall": "true",
+    "outputs": 1,
+    "x": 360,
+    "y": 80,
+    "wires": [
+      [
+        "f0000002c"
+      ]
+    ]
+  },
+  {
+    "id": "f0000002c",
+    "z": "tab00000029",
+    "type": "file in",
+    "name": "read file",
+    "filename": "filename",
+    "filenameType": "msg",
+    "format": "",
+    "allProps": false,
+    "x": 540,
+    "y": 80,
+    "wires": [
+      [
+        "t0000002d"
+      ]
+    ]
+  },
+  {
+    "id": "t0000002d",
+    "z": "tab00000029",
+    "type": "ttdu-run",
+    "name": "HWP→PDF",
+    "server": "ttducfg00001",
+    "flow": "HWP",
+    "flowJson": "",
+    "vars": "",
+    "x": 720,
+    "y": 80,
+    "wires": [
+      [
+        "p0000002e"
+      ]
+    ]
+  },
+  {
+    "id": "p0000002e",
+    "z": "tab00000029",
+    "type": "split",
+    "name": "one msg per result",
+    "splt": "\\n",
+    "spltType": "str",
+    "arraySplt": 1,
+    "arraySpltType": "len",
+    "stream": false,
+    "addname": "",
+    "x": 900,
+    "y": 80,
+    "wires": [
+      [
+        "m0000002f"
+      ]
+    ]
+  },
+  {
+    "id": "m0000002f",
+    "z": "tab00000029",
+    "type": "function",
+    "name": "name in C:/TTDU/out-pdf",
+    "func": "// one result from one input: keep the input's base name (h-001.hwpx -> h-001.pdf)\nconst base = String(msg.inputFilename || '').split(/[\\\\/]/).pop().replace(/\\.[^.]+$/, '');\nconst ext = (msg.payload.name.match(/\\.[^.]+$/) || [''])[0];\nconst name = msg.ttdu.count === 1 && base ? base + ext : msg.payload.name;\nmsg.filename = \"C:/TTDU/out-pdf\" + '/' + name;\nmsg.payload = msg.payload.data;\nreturn msg;",
+    "outputs": 1,
+    "x": 1080,
+    "y": 80,
+    "wires": [
+      [
+        "o00000030"
+      ]
+    ]
+  },
+  {
+    "id": "o00000030",
+    "z": "tab00000029",
+    "type": "file",
+    "name": "write result",
+    "filename": "filename",
+    "filenameType": "msg",
+    "appendNewline": false,
+    "createDir": true,
+    "overwriteFile": "true",
+    "encoding": "none",
+    "x": 1260,
+    "y": 80,
+    "wires": [
+      []
+    ]
+  }
+]

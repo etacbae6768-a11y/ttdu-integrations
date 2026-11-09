@@ -1,0 +1,71 @@
+id: ttdu-run
+namespace: ttdu.office
+description: |
+  TTDU flow on uploaded files (A receipt photos to PDF, B payroll check, C redaction, HWP to PDF).
+  Target local = office PC runner (files stay on the PC; Kestra on the same PC, Docker: http://host.docker.internal:8790
+  with the runner started with --allow-docker). Target hub = files are sent to the TTDU hub API.
+  Needs namespace file ttdu_client.py (MIT) and secret TTDU_API_KEY.
+inputs:
+  - id: flow
+    type: SELECT
+    values: [A, B, C, HWP, HWP_TEXT]
+    defaults: C
+  - id: f1
+    type: FILE
+  - { id: f2, type: FILE, required: false }
+  - { id: f3, type: FILE, required: false }
+  - { id: f4, type: FILE, required: false }
+  - { id: f5, type: FILE, required: false }
+  - { id: f6, type: FILE, required: false }
+  - { id: client, type: STRING, required: false }
+  - { id: date, type: STRING, required: false }
+variables:
+  ttdu_url: http://host.docker.internal:8790
+  ttdu_target: local
+tasks:
+  - id: run
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    namespaceFiles:
+      enabled: true
+      include: [ttdu_client.py]
+    inputFiles:
+      in/f1: "{{ inputs.f1 }}"
+      in/f2: "{{ inputs.f2 ?? '' }}"
+      in/f3: "{{ inputs.f3 ?? '' }}"
+      in/f4: "{{ inputs.f4 ?? '' }}"
+      in/f5: "{{ inputs.f5 ?? '' }}"
+      in/f6: "{{ inputs.f6 ?? '' }}"
+    env:
+      TTDU_API_KEY: "{{ secret('TTDU_API_KEY') }}"
+      TTDU_URL: "{{ vars.ttdu_url }}"
+      TTDU_TARGET: "{{ vars.ttdu_target }}"
+      TTDU_FLOW: "{{ inputs.flow }}"
+      TTDU_VARS: '{{ {"client": inputs.client ?? "", "date": inputs.date ?? ""} | toJson }}'
+      TTDU_NAMES: '{{ [inputs.f1 ?? "", inputs.f2 ?? "", inputs.f3 ?? "", inputs.f4 ?? "", inputs.f5 ?? "", inputs.f6 ?? ""] | toJson }}'
+    outputFiles:
+      - "out/*"
+    script: |
+      import json, os, urllib.parse
+      import ttdu_client as t
+      names = json.loads(os.environ["TTDU_NAMES"])
+      files = []
+      for i, uri in enumerate(names, 1):
+          p = "in/f%d" % i
+          if uri and os.path.exists(p) and os.path.getsize(p) > 0:
+              files.append((urllib.parse.unquote(uri.rsplit("/", 1)[-1]), open(p, "rb").read()))
+      v = {k: x for k, x in json.loads(os.environ["TTDU_VARS"]).items() if x}
+      r = t.run_flow(os.environ["TTDU_FLOW"], files, api_key=os.environ["TTDU_API_KEY"], target=os.environ["TTDU_TARGET"], url=os.environ["TTDU_URL"], vars=v)
+      os.makedirs("out", exist_ok=True)
+      for o in r["outputs"]:
+          open(os.path.join("out", o["name"]), "wb").write(o["data"])
+          print("TTDU result", o["name"], o["size"], o["sha256"])
+      print("::" + json.dumps({"outputs": {"count": len(r["outputs"]), "files": [{k: o[k] for k in ("name", "size", "sha256")} for o in r["outputs"]]}}) + "::")
+outputs:
+  - id: files
+    type: JSON
+    value: "{{ outputs.run.outputFiles }}"
+  - id: summary
+    type: JSON
+    value: "{{ outputs.run.vars ?? {} }}"

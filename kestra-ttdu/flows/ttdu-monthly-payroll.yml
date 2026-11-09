@@ -1,0 +1,42 @@
+id: ttdu-monthly-payroll
+namespace: ttdu.office
+description: |
+  On the 5th of each month 09:00 (Asia/Seoul) run TTDU flow B (payroll check) for every namespace file
+  payroll/<client>/<YYYY-MM>_<anything>.xlsx (the period comes from the file name) and keep the checked workbooks as execution output files.
+variables:
+  ttdu_url: http://host.docker.internal:8790
+  ttdu_target: local
+triggers:
+  - id: monthly
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 5 * *"
+    timezone: Asia/Seoul
+tasks:
+  - id: run
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    namespaceFiles:
+      enabled: true
+      include: [ttdu_client.py, "payroll/**.xlsx"]
+    env:
+      TTDU_API_KEY: "{{ secret('TTDU_API_KEY') }}"
+      TTDU_URL: "{{ vars.ttdu_url }}"
+      TTDU_TARGET: "{{ vars.ttdu_target }}"
+      TTDU_DATE: "{{ trigger.date ?? execution.startDate | date('yyyyMMdd', timeZone='Asia/Seoul') }}"
+    outputFiles:
+      - "out/*"
+    script: |
+      import glob, os
+      import ttdu_client as t
+      os.makedirs("out", exist_ok=True)
+      for p in sorted(glob.glob("payroll/*/*.xlsx")):
+          client = os.path.basename(os.path.dirname(p))
+          r = t.run_flow("B", [p], api_key=os.environ["TTDU_API_KEY"], target=os.environ["TTDU_TARGET"], url=os.environ["TTDU_URL"], vars={"client": client, "date": os.environ["TTDU_DATE"]})
+          for o in r["outputs"]:
+              open(os.path.join("out", o["name"]), "wb").write(o["data"])
+              print("TTDU result", o["name"], o["size"], o["sha256"])
+outputs:
+  - id: files
+    type: JSON
+    value: "{{ outputs.run.outputFiles }}"

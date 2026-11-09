@@ -1,0 +1,39 @@
+<script type="text/javascript">
+  RED.nodes.registerType('ttdu-run', {
+    category: 'function', color: '#e8f1ff', icon: 'file.svg', inputs: 1, outputs: 1,
+    defaults: { name: { value: '' }, server: { value: '', type: 'ttdu-config', required: true }, flow: { value: 'C' }, flowJson: { value: '' }, vars: { value: '' } },
+    label: function () { return this.name || ('TTDU ' + this.flow); },
+    paletteLabel: 'TTDU run'
+  });
+</script>
+<script type="text/html" data-template-name="ttdu-run">
+  <div class="form-row"><label for="node-input-name">Name</label><input type="text" id="node-input-name"></div>
+  <div class="form-row"><label for="node-input-server">Connection</label><input type="text" id="node-input-server"></div>
+  <div class="form-row"><label for="node-input-flow">Flow</label>
+    <select id="node-input-flow">
+      <option value="A">A. Receipt photos to one PDF (client_date)</option>
+      <option value="B">B. Payroll check (4 insurances, income tax)</option>
+      <option value="C">C. Redact personal data (RRN, phone, account)</option>
+      <option value="HWP">HWP/HWPX to PDF</option>
+      <option value="HWP_TEXT">HWP/HWPX to text</option>
+      <option value="custom">Custom flow JSON</option>
+      <option value="msg">From msg.flow</option>
+    </select></div>
+  <div class="form-row"><label for="node-input-flowJson">Flow JSON</label><textarea id="node-input-flowJson" rows="4" style="width:70%"></textarea></div>
+  <div class="form-row"><label for="node-input-vars">Vars (JSON)</label><input type="text" id="node-input-vars" placeholder='{"client":"ACME","date":"20261106"}'></div>
+</script>
+<script type="text/markdown" data-help-name="ttdu-run">
+Runs a TTDU flow on files and returns the result files.
+
+### Inputs
+: files (array) : `msg.files = [{name, data: Buffer}]`, or uploads from an **http in** node (`msg.req.files`), or `msg.payload` (Buffer) with `msg.filename` (e.g. from a **file in** node).
+: vars (object) : optional, merged over the node's vars (e.g. `{client, date}` for flow A/B).
+: flow (object) : when Flow = "From msg.flow", a `ttdu.flow/v1` JSON or preset id.
+
+### Outputs
+: payload (array) : `[{name, mime, size, sha256, data: Buffer}]`
+: filename (string) : first result name
+: ttdu (object) : `{ok, count, steps, notes, target}`
+
+With the **This PC** connection files stay on the PC; with the **hub** connection files are sent to the hub.
+</script>

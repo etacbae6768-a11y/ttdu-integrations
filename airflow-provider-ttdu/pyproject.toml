@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "airflow-provider-ttdu"
+version = "0.1.0"
+description = "Apache Airflow provider for TTDU (Tools That Don't Upload): run document flows on the office PC runner or the TTDU hub API."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Park Jihoon (Tools That Don't Upload)", email = "hello@toolsthatdontupload.com" }]
+requires-python = ">=3.9"
+dependencies = ["apache-airflow>=2.7"]
+classifiers = ["Framework :: Apache Airflow", "Framework :: Apache Airflow :: Provider"]
+
+[project.urls]
+Homepage = "https://toolsthatdontupload.com"
+Repository = "https://github.com/etacbae6768-a11y/ttdu-integrations"
+Source = "https://github.com/etacbae6768-a11y/ttdu-integrations/tree/main/airflow-provider-ttdu"
+Issues = "https://github.com/etacbae6768-a11y/ttdu-integrations/issues"
+
+[project.entry-points.apache_airflow_provider]
+provider_info = "ttdu_provider:get_provider_info"
+
+[tool.setuptools]
+packages = ["ttdu_provider", "ttdu_provider.hooks", "ttdu_provider.operators"]
+
+[tool.setuptools.package-data]
+ttdu_provider = ["presets.json"]

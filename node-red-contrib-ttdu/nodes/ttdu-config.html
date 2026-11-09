@@ -1,0 +1,21 @@
+<script type="text/javascript">
+  RED.nodes.registerType('ttdu-config', {
+    category: 'config',
+    defaults: { name: { value: '' }, target: { value: 'local', required: true }, baseUrl: { value: '' } },
+    credentials: { apiKey: { type: 'password' } },
+    label: function () { return this.name || (this.target === 'hub' ? 'TTDU hub' : 'TTDU this PC'); }
+  });
+</script>
+<script type="text/html" data-template-name="ttdu-config">
+  <div class="form-row"><label for="node-config-input-name">Name</label><input type="text" id="node-config-input-name"></div>
+  <div class="form-row"><label for="node-config-input-target">Target</label>
+    <select id="node-config-input-target"><option value="local">This PC (ttdu serve, files stay on the PC)</option><option value="hub">TTDU hub API (files are sent to the hub)</option></select></div>
+  <div class="form-row"><label for="node-config-input-baseUrl">URL</label><input type="text" id="node-config-input-baseUrl" placeholder="http://127.0.0.1:8790"></div>
+  <div class="form-row"><label for="node-config-input-apiKey">API key</label><input type="password" id="node-config-input-apiKey"></div>
+</script>
+<script type="text/markdown" data-help-name="ttdu-config">
+Connection to TTDU.
+
+- **This PC**: the office runner `ttdu serve` (default `http://127.0.0.1:8790`). API key = contents of `local-api-key.txt`. Files go only to this PC's runner, which runs with outbound network blocked. If Node-RED runs in Docker Desktop use `http://host.docker.internal:8790` and start the runner with `--allow-docker`.
+- **Hub**: `https://toolsthatdontupload.com` with your hub API key. Files **are sent** to the hub for the run (15 MB per request).
+</script>

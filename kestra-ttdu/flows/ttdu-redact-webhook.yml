@@ -1,0 +1,43 @@
+id: ttdu-redact-webhook
+namespace: ttdu.office
+description: |
+  POST JSON {"files": [{"name": "a.pdf", "base64": "..."}]} to
+  /api/v1/main/executions/webhook/ttdu.office/ttdu-redact-webhook/<key> -> TTDU flow C (redact RRN, phone, account).
+  Results are execution output files. Target local keeps the files on this PC.
+variables:
+  ttdu_url: http://host.docker.internal:8790
+  ttdu_target: local
+triggers:
+  - id: webhook
+    type: io.kestra.plugin.core.trigger.Webhook
+    key: change-this-long-random-key
+tasks:
+  - id: run
+    type: io.kestra.plugin.scripts.python.Script
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    namespaceFiles:
+      enabled: true
+      include: [ttdu_client.py]
+    inputFiles:
+      body.json: "{{ trigger.body | toJson }}"
+    env:
+      TTDU_API_KEY: "{{ secret('TTDU_API_KEY') }}"
+      TTDU_URL: "{{ vars.ttdu_url }}"
+      TTDU_TARGET: "{{ vars.ttdu_target }}"
+    outputFiles:
+      - "out/*"
+    script: |
+      import base64, json, os
+      import ttdu_client as t
+      body = json.load(open("body.json", encoding="utf-8"))
+      files = [(f.get("name") or "file%d" % i, base64.b64decode(f["base64"])) for i, f in enumerate(body.get("files", []))]
+      r = t.run_flow("C", files, api_key=os.environ["TTDU_API_KEY"], target=os.environ["TTDU_TARGET"], url=os.environ["TTDU_URL"])
+      os.makedirs("out", exist_ok=True)
+      for o in r["outputs"]:
+          open(os.path.join("out", o["name"]), "wb").write(o["data"])
+          print("TTDU result", o["name"], o["size"], o["sha256"])
+outputs:
+  - id: files
+    type: JSON
+    value: "{{ outputs.run.outputFiles }}"
