@@ -1,3 +1,4 @@
+// reference change 2026-11-10: client-scan-redacted-clean.png = 28E59A472B70 (90,750 B, flow C with PP-OCR, site live-20261061); old engine (Tesseract) reference 8B148CBB5BC0 (90,866 B).
 // Kestra test: upload namespace file, create flow (test URL), run A/B/C/HWP via the executions API, download outputs, compare sha256.
 import fs from 'node:fs'; import crypto from 'node:crypto'; import path from 'node:path';
 const [port, outDir] = process.argv.slice(2);
@@ -10,7 +11,7 @@ const yml = fs.readFileSync(K + 'flows/ttdu-run.yml', 'utf8').replaceAll('http:/
 try { await call('DELETE', '/flows/ttdu.office/ttdu-run'); } catch {}
 await call('POST', '/flows', yml, { 'Content-Type': 'application/x-yaml' });
 const DM = (process.env.TTDU_DEMO_DIR || './samples').replace(/\/?$/, '/'); const T = (process.env.TTDU_SAMPLES_DIR || './samples').replace(/\/?$/, '/');
-const REF = { '가나다상회_20261106.pdf': 'ABDEA6092F84', '가상고객사_급여검수_20261106.xlsx': 'AA176C11C9E4', 'client-form-redacted-clean.pdf': '5C9C153044F6', 'client-scan-redacted-clean.png': '8B148CBB5BC0', 'document.pdf': '8E3D32992CC2' };
+const REF = { '가나다상회_20261106.pdf': 'ABDEA6092F84', '가상고객사_급여검수_20261106.xlsx': 'AA176C11C9E4', 'client-form-redacted-clean.pdf': '5C9C153044F6', 'client-scan-redacted-clean.png': '28E59A472B70' /* new engine ppocr 2026-11-10; old engine reference 8B148CBB5BC0 */, 'document.pdf': '8E3D32992CC2' };
 const cases = { A: [fs.readdirSync(DM + 'A-receipts/input').map((n) => DM + 'A-receipts/input/' + n), { client: '가나다상회', date: '20261106' }], B: [[DM + 'B-payroll/input/2026-10_급여대장(회사).xlsx'], { client: '가상고객사', date: '20261106' }], C: [[DM + 'C-redact/input/client-form.pdf', DM + 'C-redact/input/client-scan.png'], {}], HWP: [[T + 'pilot/h-001.hwpx'], {}] };
 const rows = ['platform\tcase\tfile\tbytes\tsha256\treference\tmatch\texecution'];
 fs.mkdirSync(outDir, { recursive: true });

@@ -1,10 +1,11 @@
+// reference change 2026-11-10: client-scan-redacted-clean.png = 28E59A472B70 (90,750 B, flow C with PP-OCR, site live-20261061); old engine (Tesseract) reference 8B148CBB5BC0 (90,866 B).
 // POST samples to a platform's HTTP endpoints, decode returned files, compare sha256 with the Activepieces references.
 // usage: node run-cases.mjs <baseUrl with {p} for preset path> <out dir> <label> [fileField=files] [mode=b64|url]
 import fs from 'node:fs'; import crypto from 'node:crypto'; import path from 'node:path';
 const [tpl, outDir, label, field = 'files'] = process.argv.slice(2);
 const DM = (process.env.TTDU_DEMO_DIR || './samples').replace(/\/?$/, '/');
 const T = (process.env.TTDU_SAMPLES_DIR || './samples').replace(/\/?$/, '/');
-const REF = { '가나다상회_20261106.pdf': 'ABDEA6092F84', '가상고객사_급여검수_20261106.xlsx': 'AA176C11C9E4', 'client-form-redacted-clean.pdf': '5C9C153044F6', 'client-scan-redacted-clean.png': '8B148CBB5BC0', 'document.pdf': '8E3D32992CC2', 'h-001.pdf': '8E3D32992CC2' };
+const REF = { '가나다상회_20261106.pdf': 'ABDEA6092F84', '가상고객사_급여검수_20261106.xlsx': 'AA176C11C9E4', 'client-form-redacted-clean.pdf': '5C9C153044F6', 'client-scan-redacted-clean.png': '28E59A472B70' /* new engine ppocr 2026-11-10; old engine reference 8B148CBB5BC0 */, 'document.pdf': '8E3D32992CC2', 'h-001.pdf': '8E3D32992CC2' };
 const cases = {
   a: { files: fs.readdirSync(DM + 'A-receipts/input').map((n) => DM + 'A-receipts/input/' + n), vars: { client: '가나다상회', date: '20261106' } },
   b: { files: [DM + 'B-payroll/input/2026-10_급여대장(회사).xlsx'], vars: { client: '가상고객사', date: '20261106' } },
