@@ -1,0 +1,94 @@
+{
+ "schema": "ttdu.flow/v1",
+ "name": "증빙 사진 → PDF 한 부 (거래처_날짜) → Paperless 보관",
+ "vars": [
+  {
+   "key": "client",
+   "label": {
+    "ko": "거래처",
+    "en": "Client"
+   }
+  },
+  {
+   "key": "date",
+   "label": {
+    "ko": "날짜(YYYYMMDD)",
+    "en": "Date (YYYYMMDD)"
+   },
+   "pattern": "^\\d{8}$",
+   "default": "today"
+  }
+ ],
+ "steps": [
+  {
+   "tool": "image.batch",
+   "scope": "all",
+   "options": {
+    "auto_orient": true,
+    "resize": {
+     "long_edge": 1600
+    },
+    "format": "jpeg",
+    "quality": 0.85
+   },
+   "onlyKind": "image",
+   "op": "resize"
+  },
+  {
+   "tool": "pdf.from_images",
+   "scope": "all",
+   "options": {
+    "page_size": "a4",
+    "orientation": "auto",
+    "fit": "contain",
+    "margin": 18
+   },
+   "onlyKind": "image",
+   "op": "to_pdf"
+  },
+  {
+   "tool": "pdf.fit_size",
+   "scope": "each",
+   "options": {
+    "target_bytes": 1048576,
+    "allow_raster": true
+   },
+   "onlyKind": "pdf",
+   "op": "size",
+   "outName": "{client}_{date}"
+  }
+ ],
+ "expect": [
+  {
+   "check": "page_count",
+   "value": "inputs"
+  },
+  {
+   "check": "max_bytes",
+   "value": 1048576,
+   "kind": "pdf"
+  },
+  {
+   "check": "format",
+   "value": "pdf"
+  },
+  {
+   "check": "out_name",
+   "template": "{client}_{date}"
+  }
+ ],
+ "deliver": [
+  {
+   "to": "paperless",
+   "only": "pdf",
+   "title": "{client}_{date} 증빙",
+   "correspondent": "{client}",
+   "document_type": "증빙",
+   "tags": [
+    "TTDU",
+    "영수증"
+   ],
+   "created": "{date}"
+  }
+ ]
+}

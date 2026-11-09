@@ -16,9 +16,11 @@ const client = require('../../lib/ttdu-client.cjs') as {
 		flow: unknown,
 		files: Array<{ name: string; data: Buffer }>,
 		vars: Record<string, string>,
+		opts?: { deliver?: unknown },
 	) => Promise<{
 		ok: boolean;
 		notes: unknown[];
+		deliveries?: unknown[];
 		outputs: Array<{ name: string; mime?: string; size: number; sha256: string; data: Buffer }>;
 	}>;
 };
@@ -98,6 +100,13 @@ export class Ttdu implements INodeType {
 						description: 'Whether to send the files of all input items in one run (for example one PDF from many items)',
 					},
 					{
+						displayName: 'Keep Results in Office Systems (JSON)',
+						name: 'deliver',
+						type: 'json',
+						default: '[]',
+						description: 'This PC target only. Rules for office systems set up in the connectors file of the office PC runner, for example [{"to":"paperless","only":"pdf"}]. Receipts are returned in deliveries.',
+					},
+					{
 						displayName: 'Extra Variables (JSON)',
 						name: 'vars',
 						type: 'json',
@@ -143,12 +152,17 @@ export class Ttdu implements INodeType {
 			let flow: unknown = flowSel;
 			const opts = this.getNodeParameter('options', i, {}) as IDataObject;
 			let vars: Record<string, string> = {};
+			let deliver: unknown[] | undefined;
 			try {
 				if (flowSel === 'custom') {
 					const j = this.getNodeParameter('flowJson', i);
 					flow = typeof j === 'string' ? JSON.parse(j) : j;
 				}
 				if (opts.vars) vars = (typeof opts.vars === 'string' ? JSON.parse(opts.vars) : opts.vars) as Record<string, string>;
+				if (opts.deliver) {
+					const d = typeof opts.deliver === 'string' ? JSON.parse(opts.deliver) : opts.deliver;
+					if (Array.isArray(d) && d.length) deliver = d;
+				}
 			} catch (e) {
 				throw new NodeOperationError(this.getNode(), 'Invalid JSON: ' + (e as Error).message, { itemIndex: i });
 			}
@@ -158,7 +172,7 @@ export class Ttdu implements INodeType {
 			if (date) vars.date = date;
 			let r;
 			try {
-				r = await client.runFlow(auth, flow, files, vars);
+				r = await client.runFlow(auth, flow, files, vars, deliver ? { deliver } : undefined);
 			} catch (e) {
 				throw new NodeOperationError(this.getNode(), (e as Error).message, { itemIndex: i });
 			}
@@ -171,6 +185,7 @@ export class Ttdu implements INodeType {
 					count: r.outputs.length,
 					target: auth.target,
 					notes: r.notes as IDataObject[],
+					deliveries: (r.deliveries || []) as IDataObject[],
 					files: r.outputs.map((f, k) => ({ name: f.name, mime: f.mime, size: f.size, sha256: f.sha256, binaryProperty: prefix + k })),
 				},
 				binary,

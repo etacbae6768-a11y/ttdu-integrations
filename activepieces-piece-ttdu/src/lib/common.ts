@@ -49,5 +49,5 @@ export async function saveOutputs(files: FilesWriter, r: TtduResult) {
     const file = await files.write({ fileName: o.name, data });
     outputs.push({ name: o.name, mime: o.mime || null, size: o.size, sha256: o.sha256, file });
   }
-  return { ok: true, count: outputs.length, outputs, first: outputs[0] || null, notes: r.notes || [], steps: r.steps || [] };
+  return { ok: true, count: outputs.length, outputs, first: outputs[0] || null, notes: r.notes || [], steps: r.steps || [], deliveries: r.deliveries || [] }; // P7 deliver
 }

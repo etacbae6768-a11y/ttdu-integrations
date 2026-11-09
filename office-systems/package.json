@@ -1,0 +1,41 @@
+{
+  "name": "@ttdu/office-connect",
+  "version": "0.1.0",
+  "description": "Keep TTDU results in the office's own systems: Paperless-ngx (document archive), Odoo and ERPNext (attach to customer/employee records), Twenty (CRM). Talks only to their published HTTP APIs; contains none of their code. Used as the optional 'deliver' last step of the TTDU office runner.",
+  "license": "MIT",
+  "author": "Park Jihoon (Tools That Don't Upload) <hello@toolsthatdontupload.com>",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "ttdu-file": "bin/ttdu-file.mjs"
+  },
+  "exports": {
+    ".": "./src/deliver.mjs",
+    "./config": "./src/config.mjs",
+    "./paperless": "./src/paperless.mjs",
+    "./odoo": "./src/odoo.mjs",
+    "./erpnext": "./src/erpnext.mjs",
+    "./twenty": "./src/twenty.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {},
+  "files": [
+    "src",
+    "bin",
+    "examples",
+    "LICENSE",
+    "README.md",
+    "NOTICE.md"
+  ],
+  "scripts": {
+    "test": "node test/unit.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/etacbae6768-a11y/ttdu-integrations.git",
+    "directory": "office-systems"
+  },
+  "homepage": "https://github.com/etacbae6768-a11y/ttdu-integrations/tree/main/office-systems#readme"
+}

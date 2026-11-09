@@ -18,11 +18,12 @@ class TtduRunFlowOperator(BaseOperator):
     input_paths: files or glob patterns. output_dir: where result files are written.
     Returns (XCom) {ok, count, notes, files: [{name, size, sha256, path}]} - the file bytes are not put in XCom."""
 
-    template_fields: Sequence[str] = ("flow", "input_paths", "output_dir", "vars")
+    template_fields: Sequence[str] = ("flow", "input_paths", "output_dir", "vars", "deliver")
 
     def __init__(self, *, flow: Any, input_paths: Any, output_dir: str, vars: dict | None = None,
-                 ttdu_conn_id: str = TtduHook.default_conn_name, timeout: float = 600, **kwargs: Any) -> None:
+                 ttdu_conn_id: str = TtduHook.default_conn_name, timeout: float = 600, deliver: Any = None, **kwargs: Any) -> None:
         super().__init__(**kwargs)
+        self.deliver = deliver  # rules for office systems set up on the office PC runner (local target only)
         self.flow, self.input_paths, self.output_dir, self.vars = flow, input_paths, output_dir, vars or {}
         self.ttdu_conn_id, self.timeout = ttdu_conn_id, timeout
 
@@ -33,7 +34,7 @@ class TtduRunFlowOperator(BaseOperator):
             files += sorted(glob.glob(p)) or ([p] if os.path.isfile(p) else [])
         if not files:
             raise ValueError("no input files match %r" % pats)
-        r = TtduHook(ttdu_conn_id=self.ttdu_conn_id).run_flow(self.flow, files, vars=self.vars, timeout=self.timeout)
+        r = TtduHook(ttdu_conn_id=self.ttdu_conn_id).run_flow(self.flow, files, vars=self.vars, timeout=self.timeout, deliver=self.deliver)
         os.makedirs(self.output_dir, exist_ok=True)
         out = []
         for o in r["outputs"]:
@@ -42,4 +43,4 @@ class TtduRunFlowOperator(BaseOperator):
                 fh.write(o["data"])
             out.append({"name": o["name"], "size": o["size"], "sha256": o["sha256"], "path": path})
             self.log.info("TTDU result %s %s bytes sha256 %s", o["name"], o["size"], o["sha256"])
-        return {"ok": True, "count": len(out), "notes": r["notes"], "files": out}
+        return {"ok": True, "count": len(out), "notes": r["notes"], "deliveries": r.get("deliveries", []), "files": out}

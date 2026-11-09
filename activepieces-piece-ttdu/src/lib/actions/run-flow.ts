@@ -23,6 +23,7 @@ export const runFlowAction = createAction({
     flowJson: Property.Json({ displayName: 'Custom flow JSON', description: 'Only used when Flow = custom.', required: false }),
     files: filesProp,
     vars: Property.Object({ displayName: 'Name values (vars)', description: 'Values for file-name rules, e.g. client = 가나다상회, date = 20261106 (date defaults to today).', required: false }),
+    deliver: Property.Json({ displayName: 'Keep results in office systems (보관, optional)', description: 'Office PC runner only. Rules for systems set up on that PC in connectors.json (addresses and tokens stay on the PC), e.g. [{"to":"paperless","only":"pdf","correspondent":"{client}","tags":["TTDU"]}]. Receipts come back in "deliveries".', required: false }), // P7 deliver
   },
   async run(ctx) {
     const p = ctx.propsValue;
@@ -30,7 +31,7 @@ export const runFlowAction = createAction({
     if (!flow || typeof flow !== 'object') throw new Error('No flow: choose a ready flow or paste a custom flow JSON.');
     const vars: Record<string, string> = {};
     for (const [k, v] of Object.entries((p.vars || {}) as Record<string, unknown>)) if (v !== undefined && v !== null && v !== '') vars[k] = String(v);
-    const r = await runFlow(ctx.auth as unknown as TtduAuth, flow, toTtduFiles(p.files), vars);
+    const r = await runFlow(ctx.auth as unknown as TtduAuth, flow, toTtduFiles(p.files), vars, (p as { deliver?: unknown }).deliver); // P7 deliver
     return saveOutputs(ctx.files, r);
   },
 });

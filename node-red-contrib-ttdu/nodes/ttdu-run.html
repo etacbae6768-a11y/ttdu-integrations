@@ -1,7 +1,7 @@
 <script type="text/javascript">
   RED.nodes.registerType('ttdu-run', {
     category: 'function', color: '#e8f1ff', icon: 'file.svg', inputs: 1, outputs: 1,
-    defaults: { name: { value: '' }, server: { value: '', type: 'ttdu-config', required: true }, flow: { value: 'C' }, flowJson: { value: '' }, vars: { value: '' } },
+    defaults: { name: { value: '' }, server: { value: '', type: 'ttdu-config', required: true }, flow: { value: 'C' }, flowJson: { value: '' }, vars: { value: '' }, deliver: { value: '' } },
     label: function () { return this.name || ('TTDU ' + this.flow); },
     paletteLabel: 'TTDU run'
   });
@@ -20,6 +20,7 @@
       <option value="msg">From msg.flow</option>
     </select></div>
   <div class="form-row"><label for="node-input-flowJson">Flow JSON</label><textarea id="node-input-flowJson" rows="4" style="width:70%"></textarea></div>
+  <div class="form-row"><label for="node-input-deliver">Keep in office systems (JSON)</label><input type="text" id="node-input-deliver" placeholder='[{"to":"paperless","only":"pdf"}]'></div>
   <div class="form-row"><label for="node-input-vars">Vars (JSON)</label><input type="text" id="node-input-vars" placeholder='{"client":"ACME","date":"20261106"}'></div>
 </script>
 <script type="text/markdown" data-help-name="ttdu-run">
@@ -28,6 +29,7 @@ Runs a TTDU flow on files and returns the result files.
 ### Inputs
 : files (array) : `msg.files = [{name, data: Buffer}]`, or uploads from an **http in** node (`msg.req.files`), or `msg.payload` (Buffer) with `msg.filename` (e.g. from a **file in** node).
 : vars (object) : optional, merged over the node's vars (e.g. `{client, date}` for flow A/B).
+: deliver (array) : optional rules to keep the results in office systems (Paperless-ngx, Odoo, ERPNext, Twenty) configured on the office PC runner (`connectors.json`); This PC connection only. Receipts in `msg.ttdu.deliveries`.
 : flow (object) : when Flow = "From msg.flow", a `ttdu.flow/v1` JSON or preset id.
 
 ### Outputs

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "airflow-provider-ttdu"
-version = "0.1.0"
+version = "0.2.0"
 description = "Apache Airflow provider for TTDU (Tools That Don't Upload): run document flows on the office PC runner or the TTDU hub API."
 readme = "README.md"
 license = "MIT"

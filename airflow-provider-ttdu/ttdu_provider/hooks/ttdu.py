@@ -36,9 +36,9 @@ class TtduHook(BaseHook):
             url = "%s://%s%s" % (c.schema or "http", url, ":%s" % c.port if c.port else "")
         return {"target": extra.get("target", "local"), "url": url, "api_key": c.password or ""}
 
-    def run_flow(self, flow: Any, files: list, vars: dict | None = None, timeout: float = 600) -> dict:
+    def run_flow(self, flow: Any, files: list, vars: dict | None = None, timeout: float = 600, deliver: Any = None) -> dict:
         a = self._auth()
-        return client.run_flow(flow, files, api_key=a["api_key"], target=a["target"], url=a["url"], vars=vars, timeout=timeout)
+        return client.run_flow(flow, files, api_key=a["api_key"], target=a["target"], url=a["url"], vars=vars, timeout=timeout, deliver=deliver)
 
     def test_connection(self) -> tuple:
         import urllib.request

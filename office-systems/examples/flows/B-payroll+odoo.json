@@ -1,0 +1,53 @@
+{
+ "schema": "ttdu.flow/v1",
+ "name": "급여명세서 검수 (급여대장 하나 → 4대보험·소득세 재계산) → Odoo 거래처 첨부",
+ "vars": [
+  {
+   "key": "client",
+   "label": {
+    "ko": "거래처",
+    "en": "Client"
+   }
+  },
+  {
+   "key": "date",
+   "label": {
+    "ko": "날짜(YYYYMMDD)",
+    "en": "Date (YYYYMMDD)"
+   },
+   "pattern": "^\\d{8}$",
+   "default": "today"
+  }
+ ],
+ "steps": [
+  {
+   "tool": "payroll.check_kr",
+   "scope": "each",
+   "options": {
+    "tolerance": 0
+   },
+   "op": "payroll_check",
+   "outName": "{client}_급여검수_{date}"
+  }
+ ],
+ "expect": [
+  {
+   "check": "format",
+   "value": "xlsx"
+  },
+  {
+   "check": "out_name",
+   "template": "{client}_급여검수_{date}"
+  }
+ ],
+ "deliver": [
+  {
+   "to": "odoo",
+   "model": "res.partner",
+   "find": {
+    "name": "{client}"
+   },
+   "note": "TTDU 급여 검수 결과({date}): {file}"
+  }
+ ]
+}

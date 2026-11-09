@@ -16,6 +16,12 @@ jobs:
           node-version: '22'
       - name: Node-RED nodes load
         run: node -e "for (const f of ['node-red-contrib-ttdu/nodes/ttdu-config.js','node-red-contrib-ttdu/nodes/ttdu-run.js']) require('./' + f); require('./common/ttdu-client.cjs')"
+      - name: office-systems unit tests (mock servers)
+        run: node office-systems/test/unit.mjs
+      - name: deliver option unit test (JS + Python clients, mock runner)
+        env:
+          PYTHON: python3
+        run: node common/test/unit-deliver.mjs
       - name: n8n node build + package check
         working-directory: n8n-nodes-ttdu
         run: |

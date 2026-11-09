@@ -1,0 +1,37 @@
+{
+  "schema": "ttdu.connectors/v1",
+  "_설명": "이 파일을 connectors.json 으로 복사해 쓰는 프로그램만 남기고 주소를 고칩니다. 토큰·API 키는 secret_file 이 가리키는 파일에 한 줄로 넣습니다(이 파일에는 넣지 않음). 쓰지 않는 항목은 지우거나 enabled:false.",
+  "connectors": {
+    "paperless": {
+      "type": "paperless",
+      "url": "http://192.168.0.20:8000",
+      "secret_file": "secrets/paperless.txt",
+      "_secret": "Paperless-ngx 화면 → 내 프로필 → API 토큰(동그란 화살표) 값"
+    },
+    "odoo": {
+      "type": "odoo",
+      "enabled": false,
+      "url": "http://192.168.0.21:8069",
+      "database": "office",
+      "protocol": "json2",
+      "secret_file": "secrets/odoo.txt",
+      "_secret": "Odoo 19 이상: 환경설정 → 계정 보안 → 새 API 키 (최대 3개월, 만료 전 교체). Odoo 14~18 은 protocol:'jsonrpc' + login(사용자 아이디) + 같은 API 키"
+    },
+    "erpnext": {
+      "type": "erpnext",
+      "enabled": false,
+      "url": "http://192.168.0.22:8000",
+      "secret_file": "secrets/erpnext.txt",
+      "site": "",
+      "_secret": "ERPNext 사용자 → 설정 → API 접근 → 키 생성. 파일에는 api_key:api_secret 한 줄. site 는 주소가 사이트 도메인이 아닐 때만(X-Frappe-Site-Name)"
+    },
+    "twenty": {
+      "type": "twenty",
+      "enabled": false,
+      "url": "http://192.168.0.23:3000",
+      "secret_file": "secrets/twenty.txt",
+      "_secret": "Twenty 2.x → 설정 → API & Webhooks → API 키 생성(역할 지정 필요)"
+    }
+  },
+  "allow_public": false
+}

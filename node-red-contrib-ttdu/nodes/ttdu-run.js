@@ -17,6 +17,7 @@ module.exports = function (RED) {
     node.flow = n.flow || 'C';
     node.flowJson = n.flowJson || '';
     node.vars = n.vars || '';
+    node.deliver = n.deliver || '';
     node.on('input', async (msg, send, done) => {
       try {
         if (!node.server) throw new Error('no TTDU connection selected');
@@ -27,11 +28,12 @@ module.exports = function (RED) {
         if (node.vars) vars = JSON.parse(node.vars);
         if (msg.vars && typeof msg.vars === 'object') vars = Object.assign(vars, msg.vars);
         node.status({ fill: 'blue', shape: 'dot', text: 'running' });
-        const r = await client.runFlow(auth, flow, filesFromMsg(msg), vars);
+        let deliver = msg.deliver !== undefined ? msg.deliver : (node.deliver ? JSON.parse(node.deliver) : undefined);
+        const r = await client.runFlow(auth, flow, filesFromMsg(msg), vars, deliver !== undefined ? { deliver } : undefined);
         if (msg.filename) msg.inputFilename = msg.filename;
         msg.payload = r.outputs;
         msg.filename = r.outputs[0] && r.outputs[0].name;
-        msg.ttdu = { ok: r.ok, count: r.outputs.length, steps: r.steps, notes: r.notes, target: auth.target };
+        msg.ttdu = { ok: r.ok, count: r.outputs.length, steps: r.steps, notes: r.notes, deliveries: r.deliveries || [], target: auth.target };
         node.status({ fill: 'green', shape: 'dot', text: r.outputs.length + ' file(s)' });
         send(msg); done();
       } catch (e) {

@@ -1,6 +1,6 @@
 {
   "name": "@ttdu/piece-ttdu",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "TTDU (Tools That Don't Upload) piece for Activepieces: run saved TTDU flows, single tools and HWP conversion on the office PC runner (127.0.0.1, files stay on the PC) or the TTDU hub API.",
   "license": "MIT",
   "author": "Park Jihoon (Tools That Don't Upload) <hello@toolsthatdontupload.com>",

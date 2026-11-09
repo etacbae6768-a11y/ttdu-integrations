@@ -8,7 +8,7 @@
 export type TtduAuth = { target: 'local' | 'hub'; baseUrl?: string; apiKey: string };
 export type TtduFile = { name: string; base64: string };
 export type TtduOutput = { name: string; mime?: string; size: number; sha256: string; base64: string };
-export type TtduResult = { ok: boolean; steps?: unknown[]; outputs: TtduOutput[]; notes?: unknown[] };
+export type TtduResult = { ok: boolean; steps?: unknown[]; outputs: TtduOutput[]; notes?: unknown[]; deliveries?: unknown[] }; // P7 deliver
 
 export const DEFAULT_URL = { local: 'http://127.0.0.1:8790', hub: 'https://toolsthatdontupload.com' } as const;
 
@@ -28,7 +28,7 @@ export function isLocalUrl(url: string): boolean {
   try { const h = new URL(url).hostname; return h === '127.0.0.1' || h === 'localhost' || h === '::1' || h === 'host.docker.internal'; } catch { return false; }
 }
 
-export async function runFlow(rawAuth: TtduAuth, flow: unknown, files: TtduFile[], vars?: Record<string, string>): Promise<TtduResult> {
+export async function runFlow(rawAuth: TtduAuth, flow: unknown, files: TtduFile[], vars?: Record<string, string>, deliver?: unknown): Promise<TtduResult> {
   const auth = normAuth(rawAuth);
   const url = baseUrlOf(auth) + '/v1/flows/run';
   if (auth.target === 'local' && !isLocalUrl(url)) throw new Error('Local target must be this PC (127.0.0.1, localhost or host.docker.internal): ' + url);
@@ -36,6 +36,7 @@ export async function runFlow(rawAuth: TtduAuth, flow: unknown, files: TtduFile[
   const form = new FormData();
   form.append('flow', JSON.stringify(flow));
   form.append('vars', JSON.stringify(vars || {}));
+  if (deliver !== undefined && deliver !== null && deliver !== '') { if (auth.target !== 'local') throw new Error('Keeping results in office systems (deliver) works only with the office PC runner.'); form.append('deliver', JSON.stringify(deliver)); } // P7 deliver
   for (const f of files) form.append('files', new Blob([Buffer.from(f.base64, 'base64')]), f.name);
   const res = await fetch(url, { method: 'POST', headers: { 'X-API-Key': auth.apiKey }, body: form, signal: AbortSignal.timeout(10 * 60 * 1000) });
   const text = await res.text();

@@ -251,8 +251,10 @@ def _multipart(fields: dict, files: list) -> tuple:
 
 
 def run_flow(flow: Any, files: list, *, api_key: str, target: str = "local", url: str | None = None,
-             vars: dict | None = None, timeout: float = 600) -> dict:
-    """files: [(name, bytes)] or [path]. Returns {ok, steps, notes, outputs:[{name,mime,size,sha256,data}]}"""
+             vars: dict | None = None, timeout: float = 600, deliver: Any = None) -> dict:
+    """files: [(name, bytes)] or [path]. Returns {ok, steps, notes, deliveries, outputs:[{name,mime,size,sha256,data}]}.
+    deliver: optional rules to keep the results in office systems configured on the office PC runner (connectors.json);
+    local target only, receipts come back in "deliveries"."""
     base = base_url(target, url)
     if target != "hub" and urllib.parse.urlparse(base).hostname not in LOCAL_HOSTS:
         raise TtduError("local target must be this PC (127.0.0.1, localhost, host.docker.internal): " + base)
@@ -265,8 +267,12 @@ def run_flow(flow: Any, files: list, *, api_key: str, target: str = "local", url
             pairs.append((f[0], f[1]))
     if not pairs:
         raise TtduError("no files given")
-    body, ctype = _multipart({"flow": json.dumps(resolve_flow(flow), ensure_ascii=False),
-                              "vars": json.dumps(vars or {}, ensure_ascii=False)}, pairs)
+    fields = {"flow": json.dumps(resolve_flow(flow), ensure_ascii=False), "vars": json.dumps(vars or {}, ensure_ascii=False)}
+    if deliver is not None:
+        if target == "hub":
+            raise TtduError("deliver (keep results in office systems) works only with the office PC runner")
+        fields["deliver"] = deliver if isinstance(deliver, str) else json.dumps(deliver, ensure_ascii=False)
+    body, ctype = _multipart(fields, pairs)
     req = urllib.request.Request(base + "/v1/flows/run", data=body, method="POST",
                                  headers={"Content-Type": ctype, "X-API-Key": api_key.strip()})
     try:
@@ -286,4 +292,4 @@ def run_flow(flow: Any, files: list, *, api_key: str, target: str = "local", url
         if hashlib.sha256(data).hexdigest() != str(o.get("sha256", "")).lower():
             raise TtduError("sha256 mismatch for " + str(o.get("name")))
         outs.append({"name": o["name"], "mime": o.get("mime"), "size": o.get("size"), "sha256": o.get("sha256"), "data": data})
-    return {"ok": True, "steps": j.get("steps", []), "notes": j.get("notes", []), "outputs": outs}
+    return {"ok": True, "steps": j.get("steps", []), "notes": j.get("notes", []), "deliveries": j.get("deliveries", []), "outputs": outs}

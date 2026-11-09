@@ -1,0 +1,61 @@
+{
+ "schema": "ttdu.flow/v1",
+ "name": "고객 서류 개인정보 가리기 (주민번호·전화·계좌) → Paperless 보관",
+ "steps": [
+  {
+   "tool": "redact.pdf",
+   "scope": "each",
+   "options": {
+    "terms": "@pii:rrn,phone,account",
+    "term_box": "chars"
+   },
+   "onlyKind": "pdf",
+   "op": "redact"
+  },
+  {
+   "tool": "redact.image",
+   "scope": "each",
+   "options": {
+    "regions": "@pii:rrn,phone,account"
+   },
+   "onlyKind": "image",
+   "op": "redact"
+  },
+  {
+   "tool": "meta.strip",
+   "scope": "each",
+   "options": {},
+   "op": "strip_meta"
+  }
+ ],
+ "expect": [
+  {
+   "check": "pii_absent",
+   "kinds": [
+    "rrn",
+    "phone",
+    "account"
+   ]
+  }
+ ],
+ "vars": [
+  {
+   "key": "client",
+   "label": {
+    "ko": "거래처",
+    "en": "Client"
+   }
+  }
+ ],
+ "deliver": [
+  {
+   "to": "paperless",
+   "correspondent": "{client}",
+   "document_type": "가림본",
+   "tags": [
+    "TTDU",
+    "개인정보가림"
+   ]
+  }
+ ]
+}

@@ -62,6 +62,7 @@ async function runFlow(auth, flow, files, vars, opts) {
   const form = new FormData();
   form.append('flow', JSON.stringify(resolveFlow(flow)));
   form.append('vars', JSON.stringify(vars || {}));
+  if (opts && opts.deliver != null) { if (auth.target === 'hub') throw new Error('TTDU: deliver (keep results in office systems) works only with the office PC runner'); form.append('deliver', JSON.stringify(opts.deliver)); } // P7 deliver
   for (const f of normFiles(files)) form.append('files', new Blob([f.data]), f.name);
   const res = await fetch(url, { method: 'POST', headers: { 'X-API-Key': String(auth.apiKey).trim() }, body: form, signal: AbortSignal.timeout((opts && opts.timeoutMs) || 600000) });
   const text = await res.text();
@@ -69,7 +70,7 @@ async function runFlow(auth, flow, files, vars, opts) {
   if (!res.ok || !r || r.ok !== true || !Array.isArray(r.outputs)) {
     const e = new Error('TTDU run failed (HTTP ' + res.status + '): ' + text.slice(0, 500)); e.status = res.status; e.body = r || text; throw e;
   }
-  return { ok: true, steps: r.steps || [], notes: r.notes || [], outputs: r.outputs.map((o) => ({ name: o.name, mime: o.mime, size: o.size, sha256: o.sha256, data: Buffer.from(o.base64, 'base64') })) };
+  return { ok: true, steps: r.steps || [], notes: r.notes || [], deliveries: r.deliveries || [], outputs: r.outputs.map((o) => ({ name: o.name, mime: o.mime, size: o.size, sha256: o.sha256, data: Buffer.from(o.base64, 'base64') })) };
 }
 async function health(auth) {
   const res = await fetch(baseUrlOf(auth) + '/v1/health', { headers: { 'X-API-Key': String(auth.apiKey || '').trim() }, signal: AbortSignal.timeout(10000) });

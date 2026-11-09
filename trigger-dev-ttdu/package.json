@@ -1,6 +1,6 @@
 {
   "name": "@ttdu/trigger-dev-tasks",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Trigger.dev v4 task examples for TTDU (run document flows on the office PC runner or the TTDU hub).",
   "license": "MIT",

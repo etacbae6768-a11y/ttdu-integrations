@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-ttdu",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Node-RED nodes for TTDU (Tools That Don't Upload): run document flows (PDF merge, redaction, payroll check, HWP to PDF) on this PC's offline runner or the TTDU hub API.",
   "license": "MIT",
   "author": "Park Jihoon (Tools That Don't Upload) <hello@toolsthatdontupload.com>",

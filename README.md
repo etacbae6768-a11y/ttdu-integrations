@@ -10,12 +10,15 @@ Blocks for automation tools that run [TTDU](https://toolsthatdontupload.com) doc
 | [`kestra-ttdu`](kestra-ttdu) | Kestra (tested v2.0.9) | flows + `ttdu_client.py` |
 | [`trigger-dev-ttdu`](trigger-dev-ttdu) | Trigger.dev v4 | task examples |
 | [`activepieces-piece-ttdu`](activepieces-piece-ttdu) | Activepieces (tested 0.93.0) | piece `@ttdu/piece-ttdu` |
+| [`office-systems`](office-systems) | Paperless-ngx, Odoo, ERPNext, Twenty (installed by the office) | `@ttdu/office-connect` (API client, used by the office runner's `deliver` step) |
 | [`common`](common) | shared client (`ttdu-client.cjs`), ready flows (`presets.json`), test runner | |
 
 ## Where do my files go?
 
 - **This PC** (`local`, `http://127.0.0.1:8790`): files go only to the TTDU office runner on the same computer, which runs with outbound network blocked. **Files never leave the PC.**
 - **Hub** (`hub`, `https://toolsthatdontupload.com`): files are uploaded to the TTDU hub for the run (15 MB per request). Only server-capable tools run there; the office flows A/B/C/HWP answer `422 unsupported` on the hub.
+
+Optional `deliver` rules (This PC only) keep the results in the office's own systems through `office-systems`; addresses and tokens stay in the office PC's `connectors.json`.
 
 All blocks call the same API: `POST /v1/flows/run` (multipart `flow`, `vars`, `files`; header `X-API-Key`) → `{ok, steps, notes, outputs:[{name, mime, size, sha256, base64}]}`.
 

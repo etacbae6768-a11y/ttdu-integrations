@@ -1,9 +1,12 @@
 {
   "name": "n8n-nodes-ttdu",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "n8n community node for TTDU (Tools That Don't Upload): run document flows (receipt photos to PDF, payroll check, redaction, HWP to PDF) on this PC's offline runner or the TTDU hub API.",
   "license": "MIT",
-  "author": "Park Jihoon (Tools That Don't Upload) <hello@toolsthatdontupload.com>",
+  "author": {
+    "name": "Park Jihoon (Tools That Don't Upload)",
+    "email": "hello@toolsthatdontupload.com"
+  },
   "homepage": "https://github.com/etacbae6768-a11y/ttdu-integrations/tree/main/n8n-nodes-ttdu#readme",
   "keywords": [
     "n8n-community-node-package",

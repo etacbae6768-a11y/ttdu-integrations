@@ -1,5 +1,5 @@
 """TTDU provider for Apache Airflow (unofficial; not an Apache Software Foundation project). MIT License (c) 2026 Park Jihoon (Tools That Don't Upload)."""
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 def get_provider_info():
