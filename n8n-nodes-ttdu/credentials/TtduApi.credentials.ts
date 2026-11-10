@@ -37,6 +37,32 @@ export class TtduApi implements ICredentialType {
 			default: '',
 			description: 'This PC: contents of local-api-key.txt. Hub: your hub API key.',
 		},
+		{
+			displayName: 'Allowed Folders for File Paths',
+			name: 'allowedFolders',
+			type: 'string',
+			typeOptions: { rows: 2 },
+			default: '',
+			placeholder: '/files/in',
+			description:
+				'Folders on the n8n machine the TTDU node may read when its input is "File Paths" (one per line or comma-separated, absolute paths). Empty turns file paths off. Set here, not in the node, so an AI agent cannot widen it.',
+		},
+		{
+			displayName: 'Allow URL Downloads',
+			name: 'allowUrls',
+			type: 'boolean',
+			default: false,
+			description: 'Whether the TTDU node may download input files from URLs (off by default)',
+		},
+		{
+			displayName: 'Allowed URL Hosts',
+			name: 'allowedHosts',
+			type: 'string',
+			default: '',
+			placeholder: 'files.example.com, *.example.org',
+			displayOptions: { show: { allowUrls: [true] } },
+			description: 'Only these hosts are downloaded from (comma-separated; *.example.org allows its subdomains). Empty allows none.',
+		},
 	];
 
 	authenticate: IAuthenticateGeneric = {

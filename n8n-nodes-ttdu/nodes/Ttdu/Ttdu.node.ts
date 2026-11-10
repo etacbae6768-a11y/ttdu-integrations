@@ -8,6 +8,7 @@ import {
 	type INodeType,
 	type INodeTypeDescription,
 } from 'n8n-workflow';
+import { MAX_INPUT_BYTES, MAX_INPUTS, baseName, fileNameFromUrl, hostAllowed, isAbsolutePath, isInsideFolder, normalizePath, parseList } from './inputs';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const client = require('../../lib/ttdu-client.cjs') as {
@@ -33,7 +34,7 @@ export class Ttdu implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{"flow " + $parameter["flow"]}}',
-		description: 'Run a TTDU document flow on binary files (this PC runner or the TTDU hub)',
+		description: 'Run a TTDU document flow on files (binary data, file paths in allowed folders, or allowed URLs) with this PC runner or the TTDU hub',
 		defaults: { name: 'TTDU' },
 		usableAsTool: true,
 		inputs: [NodeConnectionTypes.Main],
@@ -63,12 +64,43 @@ export class Ttdu implements INodeType {
 				description: 'A ttdu.flow/v1 JSON exported from the TTDU workflows page',
 			},
 			{
+				displayName: 'Input Files',
+				name: 'source',
+				type: 'options',
+				default: 'binary',
+				description: 'Where the files come from. Use File Paths or URLs when an AI agent calls this node as a tool (agents do not pass binary data to tools).',
+				options: [
+					{ name: 'Binary Data of the Input Item', value: 'binary' },
+					{ name: 'File Paths (Allowed Folders Only)', value: 'paths', description: 'Absolute paths on the n8n machine, inside the folders allowed in the credential' },
+					{ name: 'URLs (Allowed Hosts Only)', value: 'urls', description: 'Downloaded only when the credential allows URLs and lists the host' },
+				],
+			},
+			{
 				displayName: 'Binary Properties',
 				name: 'binaryProperties',
 				type: 'string',
 				default: '',
 				placeholder: 'data, attachment_0',
+				displayOptions: { show: { source: ['binary'] } },
 				description: 'Comma-separated binary property names to send. Empty sends all binary properties of the item.',
+			},
+			{
+				displayName: 'File Paths',
+				name: 'paths',
+				type: 'string',
+				default: '',
+				placeholder: '/files/in/client-form.pdf',
+				displayOptions: { show: { source: ['paths'] } },
+				description: 'Absolute paths of the files to process, comma-separated or one per line. Each must be inside a folder allowed in the TTDU credential.',
+			},
+			{
+				displayName: 'URLs',
+				name: 'urls',
+				type: 'string',
+				default: '',
+				placeholder: 'https://files.example.com/form.pdf',
+				displayOptions: { show: { source: ['urls'] } },
+				description: 'HTTP(S) addresses of the files, comma-separated or one per line. Each host must be allowed in the TTDU credential; redirects are not followed.',
 			},
 			{
 				displayName: 'Client',
@@ -130,7 +162,74 @@ export class Ttdu implements INodeType {
 		const auth = { target: String(cred.target || 'local'), baseUrl: String(cred.baseUrl || ''), apiKey: String(cred.apiKey || '') };
 		const out: INodeExecutionData[] = [];
 
+		const allowedFolders = parseList(cred.allowedFolders).filter((f) => normalizePath(f) !== null);
+		const allowUrls = cred.allowUrls === true;
+		const allowedHosts = parseList(cred.allowedHosts);
+		const fail = (i: number, message: string, description?: string) => new NodeOperationError(this.getNode(), message, { itemIndex: i, description });
+
+		const readPath = async (i: number, p: string): Promise<{ name: string; data: Buffer }> => {
+			if (!allowedFolders.length) throw fail(i, 'File paths are off', 'Add the folders this node may read under "Allowed Folders for File Paths" in the TTDU credential.');
+			if (!isAbsolutePath(p) || normalizePath(p) === null) throw fail(i, 'Not an absolute path without "..": ' + p);
+			if (!allowedFolders.some((f) => isInsideFolder(f, p))) throw fail(i, 'Path is outside the allowed folders: ' + p);
+			// check again after n8n resolves the path (symbolic links), and respect n8n's own file access settings
+			const resolved = await this.helpers.resolvePath(p);
+			if (!allowedFolders.some((f) => isInsideFolder(f, String(resolved)))) throw fail(i, 'Path leads outside the allowed folders: ' + p);
+			if (this.helpers.isFilePathBlocked(resolved)) throw fail(i, 'n8n blocks access to this path: ' + p);
+			const stream = await this.helpers.createReadStream(resolved);
+			const chunks: Buffer[] = [];
+			let size = 0;
+			for await (const chunk of stream) {
+				const b = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
+				size += b.length;
+				if (size > MAX_INPUT_BYTES) {
+					stream.destroy();
+					throw fail(i, 'File is larger than 100 MB: ' + p);
+				}
+				chunks.push(b);
+			}
+			return { name: baseName(p), data: Buffer.concat(chunks) };
+		};
+
+		const readUrl = async (i: number, s: string, k: number): Promise<{ name: string; data: Buffer }> => {
+			if (!allowUrls) throw fail(i, 'URL downloads are off', 'Turn on "Allow URL Downloads" and list the hosts in the TTDU credential.');
+			let u: URL;
+			try {
+				u = new URL(s);
+			} catch (error) {
+				throw fail(i, 'Not a URL: ' + s, (error as Error).message);
+			}
+			if (u.protocol !== 'https:' && u.protocol !== 'http:') throw fail(i, 'Only http and https URLs are allowed: ' + s);
+			if (u.username || u.password) throw fail(i, 'URLs with a user name or password are not allowed');
+			if (!hostAllowed(u.hostname, allowedHosts)) throw fail(i, 'Host is not in the allowed URL hosts: ' + u.hostname);
+			let res: { body: ArrayBuffer | Buffer; statusCode?: number };
+			try {
+				res = (await this.helpers.httpRequest({
+					method: 'GET',
+					url: u.toString(),
+					encoding: 'arraybuffer',
+					disableFollowRedirect: true,
+					returnFullResponse: true,
+					timeout: 60000,
+				})) as { body: ArrayBuffer | Buffer; statusCode?: number };
+			} catch (error) {
+				throw fail(i, 'Download failed (redirects are not followed): ' + s, (error as Error).message);
+			}
+			const status = Number(res.statusCode || 0);
+			if (status < 200 || status > 299) throw fail(i, 'Download failed with HTTP ' + status + ' (redirects are not followed): ' + s);
+			const data = Buffer.isBuffer(res.body) ? res.body : Buffer.from(res.body);
+			if (data.length > MAX_INPUT_BYTES) throw fail(i, 'Download is larger than 100 MB: ' + s);
+			return { name: fileNameFromUrl(u, k), data };
+		};
+
 		const filesOf = async (i: number) => {
+			const source = this.getNodeParameter('source', i, 'binary') as string;
+			if (source === 'paths' || source === 'urls') {
+				const list = parseList(this.getNodeParameter(source, i, ''));
+				if (list.length > MAX_INPUTS) throw fail(i, 'At most ' + MAX_INPUTS + ' files per run');
+				const got: Array<{ name: string; data: Buffer }> = [];
+				for (const [k, s] of list.entries()) got.push(source === 'paths' ? await readPath(i, s) : await readUrl(i, s, k));
+				return got;
+			}
 			const item = items[i];
 			const want = String(this.getNodeParameter('binaryProperties', i, '') || '')
 				.split(',')
@@ -147,7 +246,13 @@ export class Ttdu implements INodeType {
 		};
 
 		const run = async (i: number, files: Array<{ name: string; data: Buffer }>): Promise<INodeExecutionData> => {
-			if (!files.length) throw new NodeOperationError(this.getNode(), 'No binary files to send', { itemIndex: i });
+			if (!files.length) {
+				const source = this.getNodeParameter('source', i, 'binary') as string;
+				throw new NodeOperationError(this.getNode(), source === 'binary' ? 'No binary files to send' : 'No files given', {
+					itemIndex: i,
+					description: source === 'binary' ? 'When an AI agent uses this node as a tool, set Input Files to File Paths or URLs.' : undefined,
+				});
+			}
 			const flowSel = this.getNodeParameter('flow', i) as string;
 			let flow: unknown = flowSel;
 			const opts = this.getNodeParameter('options', i, {}) as IDataObject;
@@ -184,6 +289,7 @@ export class Ttdu implements INodeType {
 					ok: r.ok,
 					count: r.outputs.length,
 					target: auth.target,
+					inputs: files.map((f) => f.name),
 					notes: r.notes as IDataObject[],
 					deliveries: (r.deliveries || []) as IDataObject[],
 					files: r.outputs.map((f, k) => ({ name: f.name, mime: f.mime, size: f.size, sha256: f.sha256, binaryProperty: prefix + k })),
