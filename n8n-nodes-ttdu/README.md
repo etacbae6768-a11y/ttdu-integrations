@@ -32,6 +32,8 @@ If the automation tool runs in Docker Desktop, use `http://host.docker.internal:
 | custom | any `ttdu.flow/v1` JSON exported from https://workflows.toolsthatdontupload.com | | |
 
 API: `POST /v1/flows/run` (multipart `flow`, `vars`, `files`; header `X-API-Key`) → `{ok, steps, notes, outputs:[{name, mime, size, sha256, base64}]}`.
+Changes: [CHANGELOG.md](./CHANGELOG.md). Releases are published from GitHub Actions with npm provenance.
+
 ## License
 
 MIT © 2026 Park Jihoon (Tools That Don't Upload). This package contains only our code. It does not include or modify the host platform's code.
