@@ -1,11 +1,19 @@
 # Trigger.dev tasks for TTDU
 
-Trigger.dev v4 tasks (copy `trigger/` and `src/` into your project): `ttdu-run-flow` (payload `{flow, files:[{name, base64 | url}], vars}` → `{ok, count, files:[{name, size, sha256, base64}]}`) and `ttdu-daily-hwp-to-pdf` (weekday 08:00 Asia/Seoul).
+Trigger.dev v4 tasks (copy `trigger/` and `src/` into your project, or run this folder as a project): `ttdu-run-flow` and `ttdu-daily-hwp-to-pdf` (weekday 08:00 Asia/Seoul).
 
-Env: `TTDU_TARGET` (local/hub), `TTDU_URL`, `TTDU_API_KEY`. The **local** target only works where the task runs on the office PC (`npx trigger.dev dev` or a self-hosted worker on that PC). Trigger.dev Cloud workers cannot reach your office PC; with the hub target the files are uploaded to the TTDU hub.
+Run: `npm install`, set `TRIGGER_PROJECT_REF`, then `npx trigger.dev@latest dev` or `npx trigger.dev@latest deploy`. Env: `TTDU_TARGET` (local/hub), `TTDU_URL`, `TTDU_API_KEY`.
 
-Checked: the task code (`src/run.ts`) against the office runner; type check against `@trigger.dev/sdk` 4.8.3. Not run inside a Trigger.dev server.
+## Where does document data go with Trigger.dev?
 
+Trigger.dev stores every task payload and output in the Trigger.dev instance the worker talks to. With Trigger.dev Cloud (this includes `npx trigger.dev dev`, which connects to the cloud) payloads and outputs leave your machine.
+
+- **Path mode (use this with the local runner):** payload `{ flow, paths: ["C:/in/a.pdf"], outDir: "C:/out", vars }`. The worker reads the files from disk, sends them only to the TTDU runner on 127.0.0.1 (which works offline), writes the results to `outDir` and returns names, sizes and SHA-256. File contents never enter the payload or the output; only paths and result summaries go to Trigger.dev.
+- **Inline mode:** payload `{ flow, files: [{ name, base64 | url }] }`, output with base64 results. File contents are in the payload and output, so use it only with a self-hosted Trigger.dev, or for data you are fine sending to Trigger.dev Cloud.
+- To keep all task data (payloads, outputs, logs) on your own machines, self-host Trigger.dev and run the worker there too.
+- The office flows A, B, C and HWP need the local runner. The TTDU hub API (`TTDU_TARGET=hub`) uploads the files to the hub and runs only server-capable flows such as `pdf.merge`; for the office flows it answers `422 unsupported`.
+
+Checked: both modes against the office runner (same result bytes as the browser); type check against `@trigger.dev/sdk` 4.8.3. Not run inside a Trigger.dev server.
 ## Where do my files go?
 
 | Target | URL | Files |

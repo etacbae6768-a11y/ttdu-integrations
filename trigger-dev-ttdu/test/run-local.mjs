@@ -12,4 +12,8 @@ const cases = { A: { flow: 'A', files: fs.readdirSync(DM + 'A-receipts/input').m
 const rows = ['platform\tcase\tfile\tbytes\tsha256\treference\tmatch'];
 fs.mkdirSync(outDir, { recursive: true });
 for (const [k, p] of Object.entries(cases)) { const r = await runTtdu(p, env); for (const f of r.files) { const buf = Buffer.from(f.base64, 'base64'); fs.writeFileSync(path.join(outDir, k + '_' + f.name), buf); const h = crypto.createHash('sha256').update(buf).digest('hex').toUpperCase(); rows.push(['trigger.dev task fn', k, f.name, buf.length, h, REF[f.name], h.startsWith(REF[f.name]) ? 'SAME' : 'DIFF'].join('\t')); } }
+// path mode: same cases from disk, results written to outDir/paths-<case>, payload/output without file contents
+for (const [k, p] of Object.entries(cases)) { const paths = p.files.map((f) => { const tmp = path.join(outDir, 'in-' + k); fs.mkdirSync(tmp, { recursive: true }); const fp = path.join(tmp, f.name); fs.writeFileSync(fp, Buffer.from(f.base64, 'base64')); return fp; });
+  const r = await runTtdu({ flow: p.flow, paths, outDir: path.join(outDir, 'paths-' + k), vars: p.vars }, env); const leaked = JSON.stringify(r).length > 20000;
+  for (const f of r.files) { const h = crypto.createHash('sha256').update(fs.readFileSync(f.path)).digest('hex').toUpperCase(); rows.push(['trigger.dev path mode', k, f.name, f.size, h, REF[f.name], h.startsWith(REF[f.name]) && !leaked && !f.base64 ? 'SAME' : 'DIFF'].join('\t')); } }
 fs.writeFileSync(path.join(outDir, 'hashes.tsv'), rows.join('\n') + '\n'); console.log(rows.join('\n'));
